@@ -1,119 +1,148 @@
 package com.highpeak.Ediscovery.service;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-import org.hibernate.cfg.Environment;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
 
 import com.highpeak.Ediscovery.bean.FileModel;
-import com.highpeak.Ediscovery.exceptions.StorageException;
-import com.highpeak.Ediscovery.model.File;
+//import com.highpeak.Ediscovery.model.File;
 import com.highpeak.Ediscovery.repository.FileRepository;
-
-
-
 
 @Component
 public class UploadServiceImpl implements UploadService {
 
-	
-	//private final Path rootLocation;
+	@Autowired
+	private Environment env;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(UploadServiceImpl.class);
-	
-	
-	/*@Autowired
-	public UploadServiceImpl(StorageProperties properties) {
-		this.rootLocation = Paths.get(properties.getLocation());
-	 }*/
-	 
-	/*@Autowired
-	private Environment env;*/
-	 
 	@Autowired
 	private FileRepository fileRepository;
-	
-	
-	
-	@Override
-	public List<File> getFileListById(final List<Integer> id)
-	{
-		try
-		{
-			return fileRepository.getFileList();
-		}
-		catch(final Exception e)
-		{
-			
-			return new ArrayList<>();
-		}
-	}
-	
-	
-		
-		/* String filename = StringUtils.cleanPath(file.getOriginalFilename());
-		 
-		 
-		try {
-			
-		
-			if(file.isEmpty()) {
-				throw new StorageException("Failed to store empty file"+ filename);
-			}
-	
-			
-			File fileUpload = new File();
-			fileUpload.setName(fileModel.getName());
-			//fileUpload.setPath(file.get)
-			fileUpload.setIsActive(true);
-			fileUpload.setIsProcessed(true);
-		
-			DateFormat df = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
-			Calendar calobj = Calendar.getInstance();
-			fileUpload.setCreatedDate((df.format(calobj.getTime())));
-			
-			fileRepository.save(fileUpload);
-			return "File uploaded successfully";
-		}
-			catch(Exception e) {
-				throw new StorageException("Failed to upload the File" + filename,e);
-			}
-			
-		}*/
-	
-	
-	
-	 	
-    /*@Override
-    public void init() {
-    	
-    	
-        try {
-        	
-            Files.createDirectories(rootLocation);
-        }
-        catch (IOException e) {
-            throw new StorageException("Could not initialize storage", e);
-        }
-    }*/
-}
-	
-	
-	
-	
 
+	@Autowired
+	private UploadService uploadService;
+
+	@Override
+	public List<FileModel> getFiles() {
+
+		try {
+			List<FileModel> files = fileRepository.getFiles();
+			return files;
+		} catch (Exception e) {
+			throw e;
+		}
+
+	}
+
+	@Override
+	public String fileUpload(final MultipartFile[] files) throws Exception {
+
+		FileOutputStream fp = null;
+
+		try {
+
+			final List<com.highpeak.Ediscovery.model.File> filesToReturn = new ArrayList<>();
+
+			// final String filePath = env.getProperty("ediscovery.file.upload.path") + "/";
+
+			if (files != null && files.length > 0) {
+
+				for (final MultipartFile file2 : files)
+
+				{
+
+					// final String fileName = UUID.randomUUID().toString() +
+					// file2.getOriginalFilename();
+
+					final String fileName = file2.getOriginalFilename();
+					final String filePath = env.getProperty("ediscovery.file.upload.path") + "/";
+
+					String path = "/home/karthikjoshi/Documents/ediscovery";
+					String base = "/home/karthikjoshi/Documents";
+					String relative = new File(base).toURI().relativize(new File(path).toURI()).getPath();
+
+					final byte[] bytes = file2.getBytes();
+
+					fp = new FileOutputStream(filePath + fileName);
+					final BufferedOutputStream stream = new BufferedOutputStream(fp);
+					stream.write(bytes);
+					stream.close();
+
+					final com.highpeak.Ediscovery.model.File file = new com.highpeak.Ediscovery.model.File();
+					file.setIsActive(true);
+					file.setIsProcessed(false);
+					// file.setCreatedDate(dateUtil.getUTCCalenderInstance(System.currentTimeMillis()));
+					file.setName(fileName);
+					file.setRelativePath(relative);
+
+					DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+					Calendar calobj = Calendar.getInstance();
+					file.setCreatedDate((df.format(calobj.getTime())));
+
+					file.setAbsolutePath(filePath);
+
+					filesToReturn.add(fileRepository.save(file));
+
+					// fileRepository.save(file)
+
+				}
+
+			}
+
+			return "file uploaded successfully";
+
+		}
+
+		catch (final Exception e) {
+			throw e;
+		}
+
+		finally {
+			if (null != fp) {
+				try {
+					fp.close();
+				} catch (final Exception e) {
+					throw e;
+				}
+			}
+		}
+
+	}
+	/*
+	 * @Override public String directoryUpload(String remoteDirPath, String
+	 * localParentDir, String remoteParentDir, MultipartFile[] files) throws
+	 * Exception {
+	 * 
+	 * File localDir = new File(localParentDir); File[] subFiles =
+	 * localDir.listFiles(); if (subFiles != null && subFiles.length > 0) { for
+	 * (File item : subFiles) {
+	 * 
+	 * String remoteFilePath = remoteDirPath + "/" + remoteParentDir + "/" +
+	 * item.getName(); if (remoteParentDir.equals("")) { remoteFilePath =
+	 * remoteDirPath + "/" + item.getName(); }
+	 * 
+	 * if (item.isFile()) { // upload the file String localFilePath =
+	 * item.getAbsolutePath(); System.out.println("About to upload the file: " +
+	 * localFilePath); String uploaded = uploadService.fileUpload(files);
+	 * 
+	 * } else { // create directory on the server
+	 * 
+	 * if (created) { System.out.println("CREATED the directory: " +
+	 * remoteFilePath); } else {
+	 * System.out.println("COULD NOT create the directory: " + remoteFilePath); }
+	 * 
+	 * // upload the sub directory String parent = remoteParentDir + "/" +
+	 * item.getName(); if (remoteParentDir.equals("")) { parent = item.getName(); }
+	 * 
+	 * localParentDir = item.getAbsolutePath(); directoryUpload(remoteDirPath,
+	 * localParentDir, parent); } } } }
+	 */
+}
