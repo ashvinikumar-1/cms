@@ -3,6 +3,7 @@ package com.highpeak.Ediscovery.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
@@ -35,10 +36,10 @@ public class FileUploadController extends AbstractController {
 	private FileRepository fileRepository;
 
 	@RequestMapping(value = "/upload", method = RequestMethod.POST)
-	public @ResponseBody String fileUpload(@RequestParam("file") final MultipartFile[] files) throws Exception {
+	public @ResponseBody String fileUpload(@RequestParam("file") final MultipartFile[] files,@RequestParam(value ="folder",required=false) String folder) throws Exception {
 
 		try {
-			return uploadService.fileUpload(files);
+			return uploadService.fileUpload(files,folder);
 		}
 
 		catch (Exception e) {

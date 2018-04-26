@@ -14,7 +14,7 @@ public interface UploadService {
 
 	public List<FileModel> getFiles();
 
-	public String fileUpload(final MultipartFile[] files) throws Exception;
+	public String fileUpload(final MultipartFile[] files,String folder) throws Exception;
 
 	/*
 	 * public String directoryUpload(String remoteDirPath, String localParentDir,
